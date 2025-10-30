@@ -1,0 +1,53 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Live Ghostface Voice</title>
+</head>
+<body>
+  <h1>🎃 Live Ghostface Voice (Local)</h1>
+  <button id="startBtn">Start Talking</button>
+  <button id="stopBtn">Stop</button>
+  <div id="log"></div>
+
+  <script>
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+
+    let isRunning = false;
+    const log = (...a)=>document.getElementById("log").textContent += a.join(" ") + "\n";
+
+    recognition.onresult = async (event) => {
+      const transcript = event.results[event.resultIndex][0].transcript.trim();
+      log("Heard:", transcript);
+      const res = await fetch('/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: transcript })
+      });
+      const arrayBuffer = await res.arrayBuffer();
+      const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.play();
+    };
+
+    document.getElementById('startBtn').onclick = () => {
+      if (!isRunning) {
+        isRunning = true;
+        recognition.start();
+        log("Listening...");
+      }
+    };
+    document.getElementById('stopBtn').onclick = () => {
+      if (isRunning) {
+        isRunning = false;
+        recognition.stop();
+        log("Stopped.");
+      }
+    };
+  </script>
+</body>
+</html>
